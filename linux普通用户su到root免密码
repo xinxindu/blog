@@ -1,0 +1,4 @@
+vi /etc/sudoers
+# %wheel        ALL=(ALL)       NOPASSWD: ALL
+下方添加一个类似的行
+oracle ALL=(ALL)       NOPASSWD: ALL
