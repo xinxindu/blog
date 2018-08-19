@@ -109,7 +109,32 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 					...
 						例如：
 						iptables -A INPUT -d 192.168.1.108 -s 192.168.1.1/24 -p tcp -m time --timestart 20:00 --timestop 23:00 --weekdays Sat,Sun -j LOG --log-prefix dxx-test222
-	
+				connlimit：
+					根据客户端IP做并发连接数量匹配；
+					--connlimit-upto n    
+					--connlimit-above n
+					例子：
+					iptables -A INPUT -d 192.168.1.108 -p tcp --dport 22 -m connlimit --connlimit-above 2 -j REJECT
+				limit：
+					基于收发报文的速率做匹配；
+					令牌桶过滤器(这次没有匹配到，就会暂时将令牌放到桶中，当匹配的报文过多时，可以将令牌桶中空闲的令牌发送，但是不能超过峰值值)
+					--limit rate[/second|/minute|/hour|/day]，速率过滤器
+					--limit-burst number，峰值过滤器
+					例子：
+					iptables -A INPUT -d 192.168.1.108 -p icmp --icmp-type 8 -m limit --limit 2/minute --limit-burst 5 -j ACCEPT
+					iptables -A INPUT -d 192.168.1.108 -p icmp --icmp-type 8 -j DROP
+				state：
+					根据"连接追踪机制"去检查连接的状态（netfilter缓存）
+					contract机制：追踪本机上的请求和响应的关系；状态有如下几种：
+						NEW：新发出请求,连接追踪模板中不存在此连接相关信息条目，因此将其识别为第一次发出的请求
+						ESTABLISHED：NEW状态之后，连接追踪模板中为其建立的条目失效之前期间内所进行的通信状态
+						RELATED：相关连接，如ftp中的命令和数据连接
+						INVALID：无效连接
+						UNTRACKED：未进行追踪的连接
+					[!] --state state
+				conntrack：
+					This module, when combined with connection tracking, allows access to the connection tracking state  for this packet/connection
+					
 	处理动作
 		-j target-name [per-target-options]
 			ACCETP
