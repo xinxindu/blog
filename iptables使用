@@ -12,8 +12,8 @@ iptables
 
 规则格式： 
 iptables 表 链 基本匹配 扩展匹配 执行动作
-iptables [-t table] COMMAND chain [-d ip / -s ip / -i eth / -o eth / -p tcp] [-m match-name [per-match-options]] -j target-name [per-target-options]
-	COMMAND:
+iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-options]] -j target-name [per-target-options]
+	SUBCOMMAND:
 		链管理：
 			-N	new	自定义链
 			-X  delete 自定义链
@@ -56,10 +56,59 @@ iptables [-t table] COMMAND chain [-d ip / -s ip / -i eth / -o eth / -p tcp] [-m
 		
 		扩展匹配条件：需要加载扩展模块，方可生效；
 			查询帮助信息, man iptables-extensions
-			隐式扩展:不需要
+			隐式扩展:不需要手动加载扩展模块；因为他们是对协议的扩展，所以，但凡使用了-p指明了协议，就表示已经指明了要扩展的模块；
+				tcp：
+					[!] --source-port,--sport port[:port] 匹配报文的源端口，可以是端口范围（first:last）
+					[!] --destination-port,--dport port[:port]	匹配报文的目标端口，可以是端口范围（first:last）
+					[!] --tcp-flags mask comp	mask必须要检查，comp表示必须为1
+						Flags are: SYN ACK FIN SYN ACK FIN URG PSH ALL NONE
+						例如：--tcp-flags SYN，ACK，FIN，SYN SYN    第一次握手
+					[!] --syn	表示第一次握手
+					[!] --tcp-option number
+				udp：
+					[!] --source-port,--sport port[:port]
+					[!] --destination-port,--dport port[:port]
+				icmp：
+					[!] --icmp-type {type[/code]|typename}
+						echo-request	8
+						echo-reply		0
+						例如： iptables -A INPUT -d 192.168.1.10 -p icmp --icmp-type 8 -j DROP
 			
-			显示扩展
-		
+			显示扩展：必须指定加载扩展模块
+				multiport
+					[!] --source-ports,--sports port[,port|,port:port]...
+					[!] --destination-ports,--dports port[,port|,port:port]...
+					[!] --ports port[,port|,port:port]...
+						例如：
+							iptables -A INPUT -d 192.168.1.108 -s 192.168.1.1/24 -p tcp -m multiport --dports 22,80 -j ACCEPT
+							iptables -A INPUT -d 192.168.1.108 -s 192.168.1.1/24 -p tcp -m multiport --dports 22,80:90 -j ACCEPT
+				iprange：
+					[!] --src-range from[-to]	例如，--src-range 192.168.1.100-192.168.1.150
+					[!] --dst-range from[-to]
+				string： 
+					对报文中的应用层数据做字符串模式匹配检测;
+					--algo {bm|kmp}
+					--from offset	
+						default is 0
+					--to offset
+						default is the packet size
+					[!] --string pattern	字符串匹配
+					[!] --hex-string pattern  十六进制的匹配
+						例如：
+						iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string "gay" -j LOG
+				time:
+					根据报文到达时间与指定的时间范围进行匹配；
+					--datestart YYYY[-MM[-DD[Thh[:mm[:ss]]]]]
+					--datestop YYYY[-MM[-DD[Thh[:mm[:ss]]]]]
+					--timestart hh:mm[:ss]
+					--timestop hh:mm[:ss]
+					[!] --weekdays day[,day...]
+						Mon, Tue, Wed, Thu, Fri, Sat, Sun
+					--kerneltz ,使用当前内核的时间
+						Use the kernel timezone instead of UTC
+					...
+						例如：
+						iptables -A INPUT -d 192.168.1.108 -s 192.168.1.1/24 -p tcp -m time --timestart 20:00 --timestop 23:00 --weekdays Sat,Sun -j LOG --log-prefix dxx-test222
 	
 	处理动作
 		-j target-name [per-target-options]
@@ -69,9 +118,14 @@ iptables [-t table] COMMAND chain [-d ip / -s ip / -i eth / -o eth / -p tcp] [-m
 			RETURN：返回调用链
 			REDIRECT：端口重定义
 			LOG：记录日志
+				例如：
+				iptables -A INPUT -d 192.168.1.108 -s 192.168.1.9 -p icmp --icmp-type 8 -j LOG --log-prefix dxx_test --log-level alert
+				系统日志打印：Aug 19 20:17:49 dxx-VirtualBox kernel: [31540.512587] dxx_testIN=eth0 OUT= MAC=08:00:27:e4:f0:8d:08:00:27:bf:48:4a:08:00 SRC=192.168.1.9 DST=192.168.1.108 LEN=84 TOS=0x00 PREC=0x00 TTL=64 ID=15613 DF PROTO=ICMP TYPE=8 CODE=0 ID=19358 SEQ=5
+				
 			MARK：做防火墙标记
 			DNAT：目标地址转换
 			SNAT：源地址转换
 			MASQUERADE：地址伪装
 			...
-		
+			
+
