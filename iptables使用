@@ -1,0 +1,77 @@
+iptables
+链：PREROUTING、FORWARD、INPUT、OUTPUT、POSTROUTING
+表：raw（上斜线PRE/OUT） > mangle（所有） > nat（上直角）> filter（倒三角）
+数据包流向图：
+	INPUT      					OUTPUT
+					FORWARD		
+	PREROUTING					POSTROUTING
+报文流向：
+	流入本机：PREROUTING，INPUT
+	本机流出：OUTPUT，POSTROUTING
+	转发：PREROUTING，FORWARD，POSTROUTING
+
+规则格式： 
+iptables 表 链 基本匹配 扩展匹配 执行动作
+iptables [-t table] COMMAND chain [-d ip / -s ip / -i eth / -o eth / -p tcp] [-m match-name [per-match-options]] -j target-name [per-target-options]
+	COMMAND:
+		链管理：
+			-N	new	自定义链
+			-X  delete 自定义链
+			-P	默认策略
+				ACCEPT
+				DROP
+				REJECT ：拒绝	
+			-E  重命名自定义链：引用计数不能为0的，不能重命名和删除
+
+		规则管理：
+			-A	apent，追加；
+			-I	insert，插入，要指明地址，默认是第一条；
+			-D	delete，删除：
+					（1）指明规则号
+					（2）指明规则本身
+			-R	replace	替换指定链上的指定规则
+					（1）指明规则号
+			-F	flush，清空规则链；
+			-Z	zero，置0
+		查看：
+			-L	list
+				-n number，以数字格式显示地址和端口号；
+				-v verbose，详细信息
+				-x exactly，显示计数器的精确值
+				--line-number 显示规则序号
+				
+	匹配条件
+		基本匹配条件：
+			[!] -s, --source address[/mask][,...]
+			[!] -p, --protocol protocol
+				protocol：tcp,udp, udplite, icmp, icmpv6,esp, ah, sctp, mh or "all"	
+			[!] -d, --destination address[/mask][,...]
+			[!] -i, --in-interface name
+				数据包流入的接口：只能在PREROUTING、INPUT、FORWARD链
+			[!] -o, --out-interface name
+				数据包流入的接口：只能在POSTROUTING、OUTPUT、FORWARD链
+			
+			example：
+				iptables -A OUTPUT -d 192.168.1.9 -p icmp -o eth0 -j DROP
+		
+		扩展匹配条件：需要加载扩展模块，方可生效；
+			查询帮助信息, man iptables-extensions
+			隐式扩展:不需要
+			
+			显示扩展
+		
+	
+	处理动作
+		-j target-name [per-target-options]
+			ACCETP
+			DROP
+			REJECT：拒绝
+			RETURN：返回调用链
+			REDIRECT：端口重定义
+			LOG：记录日志
+			MARK：做防火墙标记
+			DNAT：目标地址转换
+			SNAT：源地址转换
+			MASQUERADE：地址伪装
+			...
+		
