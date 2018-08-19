@@ -1,0 +1,5 @@
+centos无法上网
+1、配置了网卡的DHCP，但是没有设置ONBOOT=yes，导致开机无法启动DHCP，就无法获取到IP
+2、在/etc/sysconfig/network-scripts/ 
+	增加ifcfg-enps3o_bak也会对enps3o网卡生效，ifcfg-enps3o的DHCP也会生效     无法上网
+	增加ifcfg-bakenps3o也会对enps3o网卡生效，但是ifcfg-enps3o的DHCP不会生效  无法上网
