@@ -132,8 +132,51 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 						INVALID：无效连接
 						UNTRACKED：未进行追踪的连接
 					[!] --state state
-				conntrack：
-					This module, when combined with connection tracking, allows access to the connection tracking state  for this packet/connection
+					例子
+					22和80端口的连接追踪：
+						iptables -A INPUT -d 192.168.1.9/32 -p tcp -m multiport --dports 22,80 -m state --state NEW,ESTABLISHED -j ACCEPT
+						iptables -A OUTPUT -s 192.168.1.9 -p tcp -m multiport --sports 22,80 -m state --state ESTABLISHED -j ACCEPT
+					
+					开放被动模式的ftp：
+					（1）装载ftp连接追踪的专用模块
+						modprobe nf_contrack_ftp
+						
+					（2）放行命令连接
+						iptables -R INPUT 2 -d 192.168.1.9 -p tcp --dport 21 -m state --state NEW,ESTABLISHED -j ACCEPT
+						iptables -A OUTPUT -s 192.168.1.9 -p tcp --sport 21 -m state --state ESTABLISHED -j ACCEPT
+					
+					（3）放行数据连接
+						iptables -A INPUT -d 192.168.1.9 -m state --state ESTABLISHED,RELATED -j ACCEPT
+						iptables -A OUTPUT -s 192.168.1.9 -m state --state ESTABLISHED -j ACCEPT
+					
+					调整连接追踪功能所能容纳的最大连接数量：
+						/proc/sys/net/nf_conntrack_max
+					已经追踪到的并记录下来的连接:
+						/proc/net/nf_conntrack
+					不同的协议的连接追踪时长：
+						/proc/net/netfilter/nf_log
+						
+					链接碰到各种状态的超时后会从表中删除，当模板满载时，后续的连接可能会超时
+					解决方法：
+						（1）加大nf_contrack_max值
+							vi /etc/sysctl.conf
+								net.ipv4.nf_conntrack_max
+								net.ipv4.netfilter.nf_conntrack_max
+								
+						（2）降低nf_contrack timeout时间
+							vi /etc/sysctl.conf
+								net.ipv4.netfilter.nf_conntrack_tcp_timeout_established
+								net.ipv4.netfilter.nf_conntrack_tcp_timeout_time_wait
+								net.ipv4.netfilter.nf_conntrack_tcp_timeout_close_wait
+								net.ipv4.netfilter.nf_conntrack_tcp_timeout_fin_wait
+			
+				规则优化：
+					服务器设定：任何不允许的访问，应该在请求到达时给予拒绝；
+					（1）可安全放行所有入站状态为ESTABLISHED状态的连接；
+					（2）可安全放行所有出站状态为ESTABLISHED状态的连接；
+					（3）谨慎放行入站的新请求；
+					（4）有特殊目的限制访问功能，要于放行之前加以拒绝；
+						
 					
 	处理动作
 		-j target-name [per-target-options]
@@ -152,5 +195,4 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 			SNAT：源地址转换
 			MASQUERADE：地址伪装
 			...
-			
-
+		
