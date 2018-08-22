@@ -230,10 +230,15 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 		
 	
 练习：
-1、	限制本地主机的web服务器在周一不允许访问；
+1、	限制本地主机的web服务器在周一不允许访问；  	
 	新请求的速率不能超过100个每秒；
 	web服务器包含了admin字符串的页面不允许访问；
-	web服务器仅允许相应报文离开本机
+	web服务器仅允许响应报文离开本机
+	
+	iptables -R INPUT 1 -d 192.168.1.9 -p tcp --dport 80 -m time --weekdays Wed -j DROP
+	iptables -A INPUT -d 192.168.1.9 -p tcp --dport 80 -m state --state NEW -m limit --limit 2/minute  -j DROP
+	iptables -R INPUT 1 -d 192.168.1.9 -p tcp --dport 80 -m string --algo bm --string "sex" -j DROP
+	iptables -A OUTPUT -p tcp -m state --state ESTABLISHED -jACCEPT
 	
 2、	在工作时间，即周一到周五的8:30-18:00，开发本机的ftp服务给172.16.0.0网络中的主机访问；
 	数据下载请求的次数每分钟不得超过5个；
