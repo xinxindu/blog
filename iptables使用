@@ -17,12 +17,12 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 		链管理：
 			-N	new	自定义链
 			-X  delete 自定义链
+			-E  重命名自定义链：引用计数不能为0的，不能重命名和删除
 			-P	默认策略
 				ACCEPT
 				DROP
 				REJECT ：拒绝	
-			-E  重命名自定义链：引用计数不能为0的，不能重命名和删除
-
+			
 		规则管理：
 			-A	apent，追加；
 			-I	insert，插入，要指明地址，默认是第一条；
@@ -170,13 +170,18 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 								net.ipv4.netfilter.nf_conntrack_tcp_timeout_close_wait
 								net.ipv4.netfilter.nf_conntrack_tcp_timeout_fin_wait
 			
-				规则优化：
-					服务器设定：任何不允许的访问，应该在请求到达时给予拒绝；
-					（1）可安全放行所有入站状态为ESTABLISHED状态的连接；
-					（2）可安全放行所有出站状态为ESTABLISHED状态的连接；
-					（3）谨慎放行入站的新请求；
-					（4）有特殊目的限制访问功能，要于放行之前加以拒绝；
-						
+		规则优化：
+			服务器设定：任何不允许的访问，应该在请求到达时给予拒绝；
+			（1）可安全放行所有入站状态为ESTABLISHED状态的连接；
+			（2）可安全放行所有出站状态为ESTABLISHED状态的连接；
+			（3）谨慎放行入站的新请求；
+			（4）有特殊目的限制访问功能，要于放行之前加以拒绝；
+			
+		如何自定义链：
+			自定义链：
+				（1）需要被调用才能生效；
+				（2）自定义链需要定义返回规则；返回规则使用的target是RETURN
+			  
 					
 	处理动作
 		-j target-name [per-target-options]
@@ -195,4 +200,48 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 			SNAT：源地址转换
 			MASQUERADE：地址伪装
 			...
+			
+
+	保存规则：
+		保存至指定文件
+			CentOS6：
+				service iptables save
+					保存至 /etc/sysconfig/iptables文件中
+				iptables-save > /PATH/TO/SOME_RULES_FILE
+				
+			CentOS7:
+				iptables-save > /PATH/TO/SOME_RULES_FILE
+				
+		重新载入规则：
+			iptables-restore < /PATH/TO/SOME_RULES_FILE
+			
+			CentOS6：
+				service iptables restart
+				
+			
+	自动生效规则文件中的规则：
+		（1）用脚本保存各iptables规则，让此脚本开机后自动运行
+			/etc/rc.d/rc.local文件中添加脚本路径：
+				/PATH/TO/SOME_SCRIPT_FILE
+				
+		（2）让规则文件保存各规则，开机时自动载入此规则文件中的规则；
+			/etc/rc.d/rc.loacl文件添加：
+				iptables-restore < /PATH/TO/SOME_RULES_FILE
 		
+	
+练习：
+1、	限制本地主机的web服务器在周一不允许访问；
+	新请求的速率不能超过100个每秒；
+	web服务器包含了admin字符串的页面不允许访问；
+	web服务器仅允许相应报文离开本机
+	
+2、	在工作时间，即周一到周五的8:30-18:00，开发本机的ftp服务给172.16.0.0网络中的主机访问；
+	数据下载请求的次数每分钟不得超过5个；
+	
+3、	开发本机的ssh服务给172.16.x.1-172.16.x.100中的主机，x为你的学号，新请求建立的速率一分钟不得超过2个；
+	仅允许响应报文通过其服务端口离开本机；
+
+4、拒绝TCP标志位全部为1级全部为0的报文访问本机；
+
+5、允许本机ping别的主机；但不开放别的主机ping本机；
+	
