@@ -1,6 +1,8 @@
 iptables
 链：PREROUTING、FORWARD、INPUT、OUTPUT、POSTROUTING
 表：raw（上斜线PRE/OUT） > mangle（所有） > nat（上直角）> filter（倒三角）
+      nat表： dnat   PREROUTING、OUTPUT
+             snat    POSTROUTING
 数据包流向图：
 	INPUT      					OUTPUT
 					FORWARD		
@@ -249,4 +251,11 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 4、拒绝TCP标志位全部为1级全部为0的报文访问本机；
 
 5、允许本机ping别的主机；但不开放别的主机ping本机；
+
+6、nat练习
+   （1） 内网PC可以访问外网
+   
+   （2）将防火墙上的外网IP包转到指定内网的PC上
+   
+   （3）将防火墙上的外网IP的某个端口的包转到执行内网的PC上
 	
