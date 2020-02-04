@@ -259,3 +259,5 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
    
    （3）将防火墙上的外网IP的某个端口的包转到执行内网的PC上
 	
+备注：
+    DNAT： iptables -t nat -A PREROUTING -d 192.168.31.168 -p tcp -m tcp --dport 80 -j DNAT --to-destination 192.168.31.167:8080       用户 -> 跳板机（配置规则 本机的192.168.31.168:80） -> 目标机（192.168.31.167:8080）
