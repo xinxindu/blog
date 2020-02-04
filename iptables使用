@@ -1,6 +1,8 @@
 iptables
 链：PREROUTING、FORWARD、INPUT、OUTPUT、POSTROUTING
-表：raw（上斜线PRE/OUT） > mangle（所有） > nat（上直角）> filter（倒三角）
+表：raw（PREROUTING/OUTPUT） > mangle（所有）
+   > nat（上直角 PREROUTING|OUTPUT|POSTROUTING）> filter（倒三角 INPUT|FORWARD|OUTPUT|）
+
       nat表： dnat   PREROUTING、OUTPUT
              snat    POSTROUTING
 数据包流向图：
@@ -261,3 +263,4 @@ iptables [-t table] SUBCOMMAND chain [基本匹配] [-m match-name [per-match-op
 	
 备注：
     DNAT： iptables -t nat -A PREROUTING -d 192.168.31.168 -p tcp -m tcp --dport 80 -j DNAT --to-destination 192.168.31.167:8080       用户 -> 跳板机（配置规则 本机的192.168.31.168:80） -> 目标机（192.168.31.167:8080）
+    SNAT:  iptables -t nat -A POSTROUTING  -s 192.168.146.0/24 -j SNAT --to-source172.18.250.98
